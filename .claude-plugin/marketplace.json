@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "name": "long-running-harness",
+  "description": "长周期项目的双阶段工作流和持续跟踪脚手架",
+  "skills": [
+    {
+      "id": "long-running-harness",
+      "name": "long-running-harness",
+      "description": "长周期项目的双阶段工作流和持续跟踪脚手架",
+      "path": ".",
+      "branch": "main"
+    }
+  ]
+}
