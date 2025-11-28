@@ -1,0 +1,43 @@
+# Project Progress Log
+
+## Project: [PROJECT_NAME]
+**Description:** [PROJECT_DESCRIPTION]
+**Created:** [DATE]
+
+---
+
+## Session: [DATE TIME] (Session Title)
+
+### What was done:
+- Task 1 completed
+- Task 2 completed
+- Issue X discovered and fixed
+
+### Current State:
+- Brief description of project status
+- Any known issues or blockers
+
+### Next Steps:
+- Recommended next feature to implement
+- Any dependencies or prerequisites
+
+---
+
+## Template for New Sessions
+
+Copy and paste this template at the top when starting a new session:
+
+```
+## Session: [DATE TIME]
+
+### What was done:
+-
+
+### Current State:
+-
+
+### Next Steps:
+-
+
+---
+```

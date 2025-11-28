@@ -1,0 +1,37 @@
+{
+  "project": {
+    "name": "[PROJECT_NAME]",
+    "description": "[PROJECT_DESCRIPTION]",
+    "created": "[TIMESTAMP]"
+  },
+  "features": [
+    {
+      "id": 1,
+      "category": "functional",
+      "description": "Brief description of what this feature does",
+      "steps": [
+        "Step 1: Navigate to relevant area",
+        "Step 2: Perform the action",
+        "Step 3: Verify expected result"
+      ],
+      "priority": "high",
+      "passes": false
+    },
+    {
+      "id": 2,
+      "category": "functional",
+      "description": "Another feature description",
+      "steps": [
+        "Verification step 1",
+        "Verification step 2"
+      ],
+      "priority": "medium",
+      "passes": false
+    }
+  ],
+  "metadata": {
+    "total_features": 2,
+    "completed_features": 0,
+    "last_updated": "[TIMESTAMP]"
+  }
+}
