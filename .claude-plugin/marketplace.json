@@ -1,14 +1,19 @@
 {
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "schemaVersion": 1,
   "name": "long-running-harness",
+  "version": "1.0.0",
   "description": "长周期项目的双阶段工作流和持续跟踪脚手架",
-  "skills": [
+  "owner": {
+    "name": "eddiearc"
+  },
+  "plugins": [
     {
-      "id": "long-running-harness",
       "name": "long-running-harness",
       "description": "长周期项目的双阶段工作流和持续跟踪脚手架",
-      "path": ".",
-      "branch": "main"
+      "source": ".",
+      "category": "skills",
+      "version": "1.0.0"
     }
   ]
 }
