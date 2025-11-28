@@ -11,7 +11,7 @@
     {
       "name": "long-running-harness",
       "description": "长周期项目的双阶段工作流和持续跟踪脚手架",
-      "source": ".",
+      "source": "./",
       "category": "skills",
       "version": "1.0.0"
     }
