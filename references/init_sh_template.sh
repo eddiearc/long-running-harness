@@ -6,8 +6,12 @@ set -e
 
 echo "🚀 Starting development environment..."
 
-# Navigate to project directory
-cd "$(dirname "$0")"
+# Resolve paths
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+
+# Navigate to project root
+cd "$PROJECT_ROOT"
 
 # ============================================
 # DEPENDENCY INSTALLATION
@@ -72,7 +76,7 @@ cd "$(dirname "$0")"
 echo "✅ Development environment ready!"
 echo ""
 echo "📋 Quick reference:"
-echo "   - Progress log:   cat progress.txt"
-echo "   - Feature list:   cat feature_list.json"
+echo "   - Progress log:   cat $SCRIPT_DIR/progress.txt"
+echo "   - Feature list:   cat $SCRIPT_DIR/feature_list.json"
 echo "   - Git history:    git log --oneline -10"
 echo "   - Git status:     git status"

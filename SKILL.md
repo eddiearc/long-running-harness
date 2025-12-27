@@ -1,6 +1,6 @@
 ---
 name: long-running-harness
-description: This skill provides a framework for maintaining continuity across multiple context windows in long-running software projects. Activates when working on complex projects that span multiple sessions, when users mention "long-term project", "cross-session", "continuous development", or when setting up project tracking mechanisms. Based on Anthropic's research on effective harnesses for long-running agents.
+description: Maintain continuity across multi-session projects using per-feature harness folders at long_running/<feature-name> and required feature tracking files. Use when users request long-term/cross-session project tracking or when work must be executed via Claude CLI in bash for concrete tasks.
 ---
 
 # Long Running Harness
@@ -20,9 +20,9 @@ This skill enables effective work across multiple context windows by implementin
 
 | Component | Purpose |
 |-----------|---------|
-| `feature_list.json` | JSON-formatted feature requirements, each with `passes: true/false` |
-| `progress.txt` | Session work log documenting what was done |
-| `init.sh` | Script to start development environment |
+| `long_running/<feature-name>/feature_list.json` | JSON-formatted feature requirements, each with `passes: true/false` |
+| `long_running/<feature-name>/progress.txt` | Session work log documenting what was done |
+| `long_running/<feature-name>/init.sh` | Script to start development environment |
 | Git commits | Track changes with descriptive messages for history and rollback |
 
 ## Phase 1: Initializer Workflow
@@ -35,21 +35,25 @@ Execute this phase only on the **first session** of a new project.
    - Parse user's initial prompt for feature requirements
    - Expand into comprehensive feature list (aim for granular, testable features)
 
-2. **Create Feature List**
-   - Generate `feature_list.json` using template from `references/feature_list_template.json`
+2. **Create Harness Folder**
+   - Choose a `feature-name` in kebab-case (e.g., `login-flow`, `ipc-refactor`)
+   - Create `long_running/<feature-name>/` at the project root
+
+3. **Create Feature List**
+   - Generate `long_running/<feature-name>/feature_list.json` using template from `references/feature_list_template.json`
    - Each feature should have: category, description, verification steps, passes status
    - All features initially set to `"passes": false`
 
-3. **Create Progress File**
-   - Initialize `progress.txt` with project metadata and initial state
+4. **Create Progress File**
+   - Initialize `long_running/<feature-name>/progress.txt` with project metadata and initial state
    - Use template from `references/progress_template.txt`
 
-4. **Create Init Script**
-   - Generate `init.sh` with commands to start development environment
+5. **Create Init Script**
+   - Generate `long_running/<feature-name>/init.sh` with commands to start development environment
    - Include dependency installation, server startup, environment setup
    - Use template from `references/init_sh_template.sh`
 
-5. **Initialize Git Repository**
+6. **Initialize Git Repository**
    ```bash
    git init
    git add .
@@ -70,17 +74,18 @@ Execute this phase on **every subsequent session**.
 
 2. **Get Up to Speed**
    ```bash
-   cat progress.txt
+   HARNESS_DIR="long_running/<feature-name>"
+   cat "$HARNESS_DIR/progress.txt"
    git log --oneline -20
    ```
    Read recent progress and commit history.
 
 3. **Review Features**
-   Read `feature_list.json` and identify the highest-priority incomplete feature.
+   Read `long_running/<feature-name>/feature_list.json` and identify the highest-priority incomplete feature.
 
 4. **Start Environment**
    ```bash
-   ./init.sh
+   bash "$HARNESS_DIR/init.sh"
    ```
    Launch development server and verify basic functionality works.
 
@@ -90,12 +95,30 @@ Execute this phase on **every subsequent session**.
 ### Development Cycle
 
 1. **Select ONE Feature**
-   - Choose a single incomplete feature from `feature_list.json`
+   - Choose a single incomplete feature from `long_running/<feature-name>/feature_list.json`
    - Never attempt to implement multiple features at once
 
 2. **Implement**
    - Write code for the selected feature
    - Keep changes focused and minimal
+   - Use bash to run Claude CLI commands for concrete task execution
+
+   **Claude CLI Execution (Bash Required)**
+   - Run Claude tasks through bash using `claude --print` for non-interactive output
+   - Prefer structured output when needed with `--output-format json`
+   - Use default model unless a task explicitly requires a specific model
+   - Keep prompts in files when they are long or templated
+
+   Example:
+   ```bash
+   PROMPT_FILE="long_running/<feature-name>/prompts/task.md"
+   SYSTEM_FILE="long_running/<feature-name>/prompts/system.md"
+   claude --print \
+     --output-format json \
+     --permission-mode default \
+     --system-prompt "$(cat "$SYSTEM_FILE")" \
+     "$(cat "$PROMPT_FILE")"
+   ```
 
 3. **Verify**
    - Run project tests: `npm test`, `pytest`, or equivalent
@@ -113,7 +136,7 @@ Execute this phase on **every subsequent session**.
    ```
 
 6. **Update Progress**
-   Append to `progress.txt`:
+   Append to `long_running/<feature-name>/progress.txt`:
    ```
    ## Session: [date/time]
    - Implemented: [feature description]
@@ -127,13 +150,13 @@ Before ending a session, ensure:
 - [ ] Code compiles/runs without errors
 - [ ] All tests pass
 - [ ] Git commit made with descriptive message
-- [ ] progress.txt updated with session summary
+- [ ] long_running/<feature-name>/progress.txt updated with session summary
 - [ ] No half-implemented features left undocumented
 
 ## Critical Rules
 
 ### Feature List Integrity
-> It is unacceptable to remove or edit feature descriptions in feature_list.json. Only the `passes` field may be modified.
+> It is unacceptable to remove or edit feature descriptions in long_running/<feature-name>/feature_list.json. Only the `passes` field may be modified.
 
 ### Incremental Progress
 > Work on exactly ONE feature per development cycle. Attempting to implement multiple features simultaneously leads to context exhaustion and incomplete work.
@@ -151,7 +174,7 @@ Before ending a session, ensure:
 Run this script to initialize the harness for a new project:
 
 ```bash
-python scripts/init_harness.py /path/to/project "Project description"
+python scripts/init_harness.py /path/to/project <feature-name> "Project description"
 ```
 
 The script creates all required files with proper templates.
@@ -168,11 +191,11 @@ The script creates all required files with proper templates.
 If `init.sh` reveals the app doesn't work:
 1. Check `git log` for recent changes
 2. Consider `git revert` to restore working state
-3. Document the issue in progress.txt before fixing
+3. Document the issue in long_running/<feature-name>/progress.txt before fixing
 
 ### Context Running Low
 If approaching context limit mid-feature:
 1. Stop implementation immediately
-2. Document current state in progress.txt
+2. Document current state in long_running/<feature-name>/progress.txt
 3. Commit partial progress with clear description
 4. Mark feature as still incomplete

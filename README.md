@@ -20,20 +20,20 @@ This skill implements a two-phase development approach:
 
 Sets up the project environment on the first run:
 
-- `feature_list.json` - Comprehensive feature requirements in JSON format
-- `progress.txt` - Session work log for tracking progress
-- `init.sh` - Development environment startup script
+- `long_running/<feature-name>/feature_list.json` - Comprehensive feature requirements in JSON format
+- `long_running/<feature-name>/progress.txt` - Session work log for tracking progress
+- `long_running/<feature-name>/init.sh` - Development environment startup script
 - Git repository with initial commit
 
 ### Phase 2: Coding Agent
 
 Every subsequent session follows this workflow:
 
-1. **Orient** - Read progress.txt and git log
-2. **Select** - Choose ONE incomplete feature from feature_list.json
-3. **Implement** - Make focused, incremental changes
+1. **Orient** - Read long_running/<feature-name>/progress.txt and git log
+2. **Select** - Choose ONE incomplete feature from long_running/<feature-name>/feature_list.json
+3. **Implement** - Make focused, incremental changes (execute concrete tasks via `claude --print` in bash)
 4. **Verify** - Test the feature actually works
-5. **Document** - Commit changes and update progress.txt
+5. **Document** - Commit changes and update long_running/<feature-name>/progress.txt
 
 ## Installation
 
@@ -54,7 +54,7 @@ git clone https://github.com/eddiearc/long-running-harness.git ~/.claude/skills/
 ### Initialize a New Project
 
 ```bash
-python ~/.claude/skills/long-running-harness/scripts/init_harness.py /path/to/project "Project description"
+python ~/.claude/skills/long-running-harness/scripts/init_harness.py /path/to/project <feature-name> "Project description"
 ```
 
 Or let Claude handle it - the skill activates automatically when you:
@@ -67,9 +67,9 @@ Or let Claude handle it - the skill activates automatically when you:
 
 In subsequent sessions, Claude will automatically:
 
-1. Read progress.txt and git history
-2. Review feature_list.json for next task
-3. Run init.sh to start the development environment
+1. Read long_running/<feature-name>/progress.txt and git history
+2. Review long_running/<feature-name>/feature_list.json for next task
+3. Run long_running/<feature-name>/init.sh to start the development environment
 4. Work on one feature at a time
 5. Update tracking files before ending
 

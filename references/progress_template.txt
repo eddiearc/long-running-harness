@@ -20,6 +20,7 @@
 ### Next Steps:
 - Recommended next feature to implement
 - Any dependencies or prerequisites
+- Claude CLI tasks should be executed via bash (`claude --print ...`)
 
 ---
 
@@ -38,6 +39,7 @@ Copy and paste this template at the top when starting a new session:
 
 ### Next Steps:
 -
+- Claude CLI tasks should be executed via bash (`claude --print ...`)
 
 ---
 ```
