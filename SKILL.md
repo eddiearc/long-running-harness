@@ -101,13 +101,15 @@ Execute this phase on **every subsequent session**.
 2. **Implement**
    - Write code for the selected feature
    - Keep changes focused and minimal
-   - Use bash to run Claude CLI commands for concrete task execution
+   - Run `claude --print` via bash for concrete task execution at least once per feature
+   - If `claude --print` cannot be run, request user confirmation before proceeding and record the skip reason in `progress.txt`
 
    **Claude CLI Execution (Bash Required)**
    - Run Claude tasks through bash using `claude --print` for non-interactive output
    - Prefer structured output when needed with `--output-format json`
    - Use default model unless a task explicitly requires a specific model
    - Keep prompts in files when they are long or templated
+   - Store prompt files in `long_running/<feature-name>/prompts/` for reuse
 
    Example:
    ```bash
@@ -166,6 +168,9 @@ Before ending a session, ensure:
 
 ### Honest Verification
 > Never mark a feature as `"passes": true` without actual verification. Premature completion marking is a primary failure mode.
+
+### Claude CLI Usage
+> Run `claude --print` for every feature implementation. If skipping, request user confirmation and document the reason in `progress.txt`.
 
 ## Resources
 
