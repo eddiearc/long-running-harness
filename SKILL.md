@@ -37,6 +37,51 @@ This skill enables effective work across multiple context windows by implementin
 
 The worker does not accept its own work. The evaluator does not implement fixes unless the main agent explicitly changes the workflow.
 
+## Mandatory Planning Conversation Gate
+
+Before editing application code, configuration, tests, or deployment files, stop at the planning stage and communicate with the user.
+
+The main agent MUST first provide:
+
+- A concise restatement of the user goal and boundaries
+- The proposed feature list or the feature list updates to be written
+- The selected implementation slice
+- Acceptance criteria
+- Verification commands and manual checks
+- Non-goals
+- A recommendation on whether subagents should be used
+
+Then ask the user to confirm the plan before implementation starts. If the user does not confirm, do not edit source files.
+
+The planning message MUST also ask:
+
+> Do you want this executed with subagents?
+
+Offer exactly these execution modes:
+
+- **Use subagents:** one implementation worker and one verification evaluator; the main agent plans, integrates, and updates completion state only after evaluator approval.
+- **Main-agent only:** the main agent implements and verifies, while still writing `handoffs/implementation.md` and `handoffs/verification.md`.
+
+Default recommendation: small single-surface changes usually do not need subagents; complex, risky, cross-module, or long-running work should use subagents.
+
+## Execution Mode Rule
+
+Subagents are recommended, not mandatory. The user must explicitly choose the execution mode during the planning conversation.
+
+If the user chooses subagents:
+
+- Spawn one implementation worker when tools and policy allow it.
+- Spawn one verification evaluator after implementation.
+- The main agent alone updates `feature_list.json` after evaluator pass.
+- If tools or policy prevent subagent use, stop and ask whether to continue main-agent only.
+
+If the user chooses main-agent only:
+
+- The main agent may implement the selected feature.
+- The main agent must write `handoffs/implementation.md`.
+- The main agent must run verification and write `handoffs/verification.md`.
+- The main agent must not mark `passes: true` without command output, browser evidence, or equivalent concrete verification.
+
 ## Phase 1: Initializer Workflow
 
 Execute this phase only on the **first session** of a new project.
@@ -71,7 +116,13 @@ Execute this phase only on the **first session** of a new project.
    - Include dependency installation, server startup, environment setup
    - Use template from `references/init_sh_template.sh`
 
-7. **Initialize Git Repository**
+7. **Ask for Plan Confirmation and Execution Mode**
+   - Present the planning message required by the Mandatory Planning Conversation Gate
+   - Ask the user to confirm the plan
+   - Ask whether to use subagents or main-agent-only execution
+   - Do not edit source files until the user confirms
+
+8. **Initialize Git Repository**
    ```bash
    git init
    git add .
@@ -116,22 +167,25 @@ Execute this phase on **every subsequent session**.
    - Choose a single incomplete feature from `long_running/<feature-name>/feature_list.json`
    - Never attempt to implement multiple features at once
    - Update `plan.md` with the selected feature, scope, acceptance criteria, verification commands, manual checks, and non-goals
-   - Update `state.json` to `implementing`
+   - Ask the user to confirm the selected feature and choose the execution mode
+   - Update `state.json` to `implementing` only after confirmation
 
-2. **Delegate Implementation**
-   - Spawn one implementation subagent when subagent tools are available and the user has authorized agent collaboration
-   - Use `references/subagent_prompts.md` to create the worker prompt
-   - Give the worker a clear ownership scope and the selected feature
-   - Require the worker to write `handoffs/implementation.md`
-   - If using Claude CLI instead of built-in subagents, run `claude --print` via bash and store prompt files in `prompts/`
+2. **Implement According to Execution Mode**
+   - If the user chose subagents, spawn one implementation subagent when tools and policy allow it
+   - If using subagents, use `references/subagent_prompts.md` to create the worker prompt
+   - If using subagents, give the worker a clear ownership scope and the selected feature
+   - If using subagents, require the worker to write `handoffs/implementation.md`
+   - If the user chose main-agent only, the main agent implements and writes `handoffs/implementation.md`
+   - If subagents were requested but are unavailable, stop and ask whether to continue main-agent only
 
 3. **Verify**
    - Update `state.json` to `verifying`
-   - Spawn one evaluator subagent after the worker returns
-   - Use `references/subagent_prompts.md` to create the evaluator prompt
+   - If the user chose subagents, spawn one evaluator subagent after the worker returns
+   - If using subagents, use `references/subagent_prompts.md` to create the evaluator prompt
    - Run project tests: `npm test`, `pytest`, or equivalent
    - For web apps, use browser automation or realistic manual interaction when practical
-   - Require the evaluator to write `handoffs/verification.md`
+   - If using subagents, require the evaluator to write `handoffs/verification.md`
+   - If main-agent only, write `handoffs/verification.md` directly with command outputs and manual check results
    - Only mark as complete after actual verification
 
 4. **Update Feature List**
@@ -176,8 +230,8 @@ Before ending a session, ensure:
 ### Honest Verification
 > Never mark a feature as `"passes": true` without actual verification. Premature completion marking is a primary failure mode.
 
-### Claude CLI Usage
-> If built-in subagents are unavailable, run `claude --print` for every feature implementation. If skipping, request user confirmation and document the reason in `progress.txt`.
+### Subagent Availability
+> Subagents are not mandatory. If the user chose subagents but built-in subagents are unavailable, the agent may offer `claude --print` as a fallback when practical, or ask whether to continue main-agent only. Document the final execution mode and reason in `progress.txt`.
 
 ### Subagent Separation
 > The implementation subagent must not mark its own feature complete. The evaluator must not fix code while verifying. The main agent integrates both handoffs and owns the final decision.
