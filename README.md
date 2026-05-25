@@ -47,27 +47,49 @@ Every subsequent session follows this workflow:
 
 ## Installation
 
-Copy the `long-running-harness` folder to your Claude Code skills directory:
+### Codex
 
 ```bash
-cp -r long-running-harness ~/.claude/skills/
+git clone https://github.com/eddiearc/long-running-harness.git ~/.codex/skills/long-running-harness
 ```
 
-Or clone directly:
+If you already cloned the repository elsewhere:
+
+```bash
+mkdir -p ~/.codex/skills
+cp -R long-running-harness ~/.codex/skills/long-running-harness
+```
+
+### Claude Code
 
 ```bash
 git clone https://github.com/eddiearc/long-running-harness.git ~/.claude/skills/long-running-harness
+```
+
+If you already cloned the repository elsewhere:
+
+```bash
+mkdir -p ~/.claude/skills
+cp -R long-running-harness ~/.claude/skills/long-running-harness
 ```
 
 ## Usage
 
 ### Initialize a New Project
 
+Codex install:
+
+```bash
+python ~/.codex/skills/long-running-harness/scripts/init_harness.py /path/to/project <feature-name> "Project description"
+```
+
+Claude Code install:
+
 ```bash
 python ~/.claude/skills/long-running-harness/scripts/init_harness.py /path/to/project <feature-name> "Project description"
 ```
 
-Or let Claude handle it - the skill activates automatically when you:
+Or let the active agent handle it - the skill activates automatically when you:
 
 - Start a complex project expected to require multiple sessions
 - Mention "long-term project", "cross-session", or "continuous development"
@@ -75,7 +97,7 @@ Or let Claude handle it - the skill activates automatically when you:
 
 ### Continue Working
 
-In subsequent sessions, Claude will automatically:
+In subsequent sessions, the active agent will:
 
 1. Read long_running/<feature-name>/progress.txt and git history
 2. Review long_running/<feature-name>/feature_list.json for next task
