@@ -1,13 +1,13 @@
 ---
 name: long-running-harness
-description: Maintain continuity across multi-session projects using per-feature harness folders at long_running/<feature-name> and required feature tracking files. Use when users request long-term/cross-session project tracking or when work must be executed via Claude CLI in bash for concrete tasks.
+description: Use when users request long-term, cross-session, persistent, planner-led, subagent-coordinated, or Anthropic-style long-running coding work.
 ---
 
 # Long Running Harness
 
 ## Overview
 
-This skill enables effective work across multiple context windows by implementing a two-phase development approach: an **Initializer Phase** that sets up the project environment, and a **Coding Phase** that ensures incremental progress with clear artifacts for subsequent sessions.
+This skill enables effective work across multiple context windows by implementing a planner-led harness. The main agent plans and coordinates; implementation and verification can be delegated to two focused subagents.
 
 ## When to Use
 
@@ -20,10 +20,22 @@ This skill enables effective work across multiple context windows by implementin
 
 | Component | Purpose |
 |-----------|---------|
+| `long_running/<feature-name>/plan.md` | Planner-owned scope, acceptance criteria, and selected implementation slice |
 | `long_running/<feature-name>/feature_list.json` | JSON-formatted feature requirements, each with `passes: true/false` |
 | `long_running/<feature-name>/progress.txt` | Session work log documenting what was done |
 | `long_running/<feature-name>/init.sh` | Script to start development environment |
+| `long_running/<feature-name>/state.json` | Current phase, selected feature, subagent ids, and blocker state |
+| `long_running/<feature-name>/handoffs/` | Implementation and verification handoffs between agents |
+| `long_running/<feature-name>/prompts/` | Reusable worker/evaluator prompt files |
 | Git commits | Track changes with descriptive messages for history and rollback |
+
+## Agent Roles
+
+- **Main agent: planner/conductor.** Owns requirements, selected feature, acceptance criteria, state transitions, and final completion decision.
+- **Implementation subagent: worker.** Implements exactly one selected feature and writes `handoffs/implementation.md`.
+- **Verification subagent: evaluator.** Tests that feature end to end and writes `handoffs/verification.md`.
+
+The worker does not accept its own work. The evaluator does not implement fixes unless the main agent explicitly changes the workflow.
 
 ## Phase 1: Initializer Workflow
 
@@ -44,16 +56,22 @@ Execute this phase only on the **first session** of a new project.
    - Each feature should have: category, description, verification steps, passes status
    - All features initially set to `"passes": false`
 
-4. **Create Progress File**
+4. **Create Planner Files**
+   - Generate `long_running/<feature-name>/plan.md`
+   - Generate `long_running/<feature-name>/state.json`
+   - Create `long_running/<feature-name>/handoffs/`
+   - Create `long_running/<feature-name>/prompts/`
+
+5. **Create Progress File**
    - Initialize `long_running/<feature-name>/progress.txt` with project metadata and initial state
    - Use template from `references/progress_template.txt`
 
-5. **Create Init Script**
+6. **Create Init Script**
    - Generate `long_running/<feature-name>/init.sh` with commands to start development environment
    - Include dependency installation, server startup, environment setup
    - Use template from `references/init_sh_template.sh`
 
-6. **Initialize Git Repository**
+7. **Initialize Git Repository**
    ```bash
    git init
    git add .
@@ -97,38 +115,27 @@ Execute this phase on **every subsequent session**.
 1. **Select ONE Feature**
    - Choose a single incomplete feature from `long_running/<feature-name>/feature_list.json`
    - Never attempt to implement multiple features at once
+   - Update `plan.md` with the selected feature, scope, acceptance criteria, verification commands, manual checks, and non-goals
+   - Update `state.json` to `implementing`
 
-2. **Implement**
-   - Write code for the selected feature
-   - Keep changes focused and minimal
-   - Run `claude --print` via bash for concrete task execution at least once per feature
-   - If `claude --print` cannot be run, request user confirmation before proceeding and record the skip reason in `progress.txt`
-
-   **Claude CLI Execution (Bash Required)**
-   - Run Claude tasks through bash using `claude --print` for non-interactive output
-   - Prefer structured output when needed with `--output-format json`
-   - Use default model unless a task explicitly requires a specific model
-   - Keep prompts in files when they are long or templated
-   - Store prompt files in `long_running/<feature-name>/prompts/` for reuse
-
-   Example:
-   ```bash
-   PROMPT_FILE="long_running/<feature-name>/prompts/task.md"
-   SYSTEM_FILE="long_running/<feature-name>/prompts/system.md"
-   claude --print \
-     --output-format json \
-     --permission-mode default \
-     --system-prompt "$(cat "$SYSTEM_FILE")" \
-     "$(cat "$PROMPT_FILE")"
-   ```
+2. **Delegate Implementation**
+   - Spawn one implementation subagent when subagent tools are available and the user has authorized agent collaboration
+   - Use `references/subagent_prompts.md` to create the worker prompt
+   - Give the worker a clear ownership scope and the selected feature
+   - Require the worker to write `handoffs/implementation.md`
+   - If using Claude CLI instead of built-in subagents, run `claude --print` via bash and store prompt files in `prompts/`
 
 3. **Verify**
+   - Update `state.json` to `verifying`
+   - Spawn one evaluator subagent after the worker returns
+   - Use `references/subagent_prompts.md` to create the evaluator prompt
    - Run project tests: `npm test`, `pytest`, or equivalent
-   - Manually verify the feature works as expected
+   - For web apps, use browser automation or realistic manual interaction when practical
+   - Require the evaluator to write `handoffs/verification.md`
    - Only mark as complete after actual verification
 
 4. **Update Feature List**
-   - Change `"passes": false` to `"passes": true` only for verified features
+   - Main agent changes `"passes": false` to `"passes": true` only for the verified selected feature
    - Never remove or edit feature descriptions
 
 5. **Commit Changes**
@@ -170,7 +177,10 @@ Before ending a session, ensure:
 > Never mark a feature as `"passes": true` without actual verification. Premature completion marking is a primary failure mode.
 
 ### Claude CLI Usage
-> Run `claude --print` for every feature implementation. If skipping, request user confirmation and document the reason in `progress.txt`.
+> If built-in subagents are unavailable, run `claude --print` for every feature implementation. If skipping, request user confirmation and document the reason in `progress.txt`.
+
+### Subagent Separation
+> The implementation subagent must not mark its own feature complete. The evaluator must not fix code while verifying. The main agent integrates both handoffs and owns the final decision.
 
 ## Resources
 
@@ -189,6 +199,7 @@ The script creates all required files with proper templates.
 - `feature_list_template.json` - Template for feature list structure
 - `progress_template.txt` - Template for progress file
 - `init_sh_template.sh` - Template for init script
+- `subagent_prompts.md` - Prompt templates for implementation and verification subagents
 
 ## Troubleshooting
 

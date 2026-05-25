@@ -1,6 +1,6 @@
 # Long-Running Harness
 
-A Claude Code skill for maintaining continuity across multiple context windows in long-running software projects.
+A Claude Code and Codex skill for maintaining continuity across multiple context windows in long-running software projects.
 
 Based on Anthropic's research: [Effective Harnesses for Long-Running Agents](https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents)
 
@@ -14,26 +14,36 @@ When AI agents work on complex projects spanning multiple sessions, each new ses
 
 ## Solution
 
-This skill implements a two-phase development approach:
+This skill implements a planner-led development approach:
 
 ### Phase 1: Initializer
 
 Sets up the project environment on the first run:
 
+- `long_running/<feature-name>/plan.md` - Planner-owned scope and acceptance criteria
 - `long_running/<feature-name>/feature_list.json` - Comprehensive feature requirements in JSON format
 - `long_running/<feature-name>/progress.txt` - Session work log for tracking progress
 - `long_running/<feature-name>/init.sh` - Development environment startup script
+- `long_running/<feature-name>/state.json` - Current harness phase and selected feature
+- `long_running/<feature-name>/handoffs/` - Worker/evaluator handoff files
+- `long_running/<feature-name>/prompts/` - Reusable prompt files
 - Git repository with initial commit
 
-### Phase 2: Coding Agent
+### Phase 2: Planner-Led Agent Team
 
 Every subsequent session follows this workflow:
 
 1. **Orient** - Read long_running/<feature-name>/progress.txt and git log
-2. **Select** - Choose ONE incomplete feature from long_running/<feature-name>/feature_list.json
-3. **Implement** - Make focused, incremental changes (execute concrete tasks via `claude --print` in bash)
-4. **Verify** - Test the feature actually works
-5. **Document** - Commit changes and update long_running/<feature-name>/progress.txt
+2. **Plan** - Choose ONE incomplete feature and update long_running/<feature-name>/plan.md
+3. **Implement** - Delegate focused changes to a worker subagent when available
+4. **Verify** - Delegate skeptical end-to-end checks to an evaluator subagent
+5. **Document** - Commit changes, update feature_list.json, and append progress.txt
+
+## Agent Roles
+
+- **Main agent:** planner/conductor. Owns scope, selected feature, acceptance criteria, and final completion decision.
+- **Worker subagent:** implements one selected feature and writes `handoffs/implementation.md`.
+- **Evaluator subagent:** verifies that feature and writes `handoffs/verification.md`.
 
 ## Installation
 
@@ -83,7 +93,8 @@ long-running-harness/
 └── references/
     ├── feature_list_template.json        # Feature list template
     ├── progress_template.txt             # Progress file template
-    └── init_sh_template.sh               # Init script template
+    ├── init_sh_template.sh               # Init script template
+    └── subagent_prompts.md               # Worker/evaluator prompt templates
 ```
 
 ## Key Principles
@@ -92,6 +103,7 @@ long-running-harness/
 2. **Clean State** - Leave codebase mergeable after each session
 3. **Honest Verification** - Only mark features complete after actual testing
 4. **Feature List Integrity** - Never remove or edit feature descriptions, only update `passes` status
+5. **Subagent Separation** - Worker implements; evaluator verifies; main agent decides
 
 ## License
 

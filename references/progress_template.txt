@@ -12,15 +12,18 @@
 - Task 1 completed
 - Task 2 completed
 - Issue X discovered and fixed
+- Worker/evaluator handoffs written when subagents were used
 
 ### Current State:
 - Brief description of project status
 - Any known issues or blockers
+- Current selected feature and harness phase
 
 ### Next Steps:
 - Recommended next feature to implement
 - Any dependencies or prerequisites
-- Claude CLI tasks should be executed via bash (`claude --print ...`)
+- Update plan.md before implementation
+- Use worker/evaluator subagents when available, or execute concrete tasks via bash (`claude --print ...`)
 
 ---
 
@@ -39,7 +42,10 @@ Copy and paste this template at the top when starting a new session:
 
 ### Next Steps:
 -
-- Claude CLI tasks should be executed via bash (`claude --print ...`)
+- Selected feature:
+- Worker handoff:
+- Evaluator handoff:
+- Claude CLI fallback tasks should be executed via bash (`claude --print ...`)
 
 ---
 ```

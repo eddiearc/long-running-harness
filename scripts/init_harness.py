@@ -6,9 +6,13 @@ Usage:
     python init_harness.py <project_path> <feature_name> <project_description>
 
 This script creates:
+    - long_running/<feature_name>/plan.md - Planner-owned scope and acceptance criteria
     - long_running/<feature_name>/feature_list.json - Feature tracking file
     - long_running/<feature_name>/progress.txt - Session progress log
     - long_running/<feature_name>/init.sh - Development environment startup script
+    - long_running/<feature_name>/state.json - Harness state
+    - long_running/<feature_name>/handoffs/ - Subagent handoff files
+    - long_running/<feature_name>/prompts/ - Reusable subagent prompt files
 """
 
 import argparse
@@ -66,6 +70,43 @@ def create_feature_list(project_name: str, harness_dir: Path, description: str) 
     print(f"✅ Created {output_path}")
 
 
+def create_plan_file(harness_dir: Path, description: str) -> None:
+    """Create the planner-owned plan.md file."""
+    content = f"""# Planner Plan
+
+## Problem Statement
+
+{description}
+
+## User-Facing Goal
+
+## Selected Feature
+
+No feature selected yet.
+
+## Implementation Slice
+
+## Acceptance Criteria
+
+## Verification Commands
+
+## Manual Checks
+
+## Non-Goals
+
+## Likely Files or Modules
+
+## Notes for Subagents
+
+"""
+
+    output_path = harness_dir / "plan.md"
+    with open(output_path, "w", encoding="utf-8") as f:
+        f.write(content)
+
+    print(f"✅ Created {output_path}")
+
+
 def create_progress_file(project_name: str, harness_dir: Path, description: str) -> None:
     """Create the initial progress.txt file."""
     content = f"""# Project Progress Log
@@ -81,15 +122,19 @@ def create_progress_file(project_name: str, harness_dir: Path, description: str)
 ### What was done:
 - Initialized project harness
 - Created feature_list.json with initial feature requirements
+- Created plan.md for planner-owned scope and acceptance criteria
 - Created progress.txt for session tracking
 - Created init.sh for environment setup
+- Created state.json, handoffs/, and prompts/ for subagent coordination
 
 ### Current State:
 - Project is ready for development
 - Feature list needs to be expanded based on requirements
+- Planner should select exactly one feature before delegating implementation
 
 ### Next Steps:
 - Review and expand feature_list.json with all required features
+- Fill plan.md with the selected feature, acceptance criteria, verification commands, and non-goals
 - Implement the first feature from the list
 
 ---
@@ -101,8 +146,10 @@ When starting a new session:
 2. Check git log for commit history
 3. Review feature_list.json for next task
 4. Run ./init.sh to start development environment
-5. Pick ONE feature and implement it
-6. Update this file before ending session
+5. Pick ONE feature and update plan.md
+6. Delegate implementation to a worker subagent when available
+7. Delegate verification to an evaluator subagent
+8. Update this file before ending session
 
 """
 
@@ -111,6 +158,38 @@ When starting a new session:
         f.write(content)
 
     print(f"✅ Created {output_path}")
+
+
+def create_state_file(project_name: str, feature_name: str, harness_dir: Path) -> None:
+    """Create the initial state.json file."""
+    now = datetime.now().isoformat()
+    state = {
+        "project": project_name,
+        "feature_name": feature_name,
+        "status": "planning",
+        "selected_feature_id": None,
+        "worker_agent": None,
+        "evaluator_agent": None,
+        "blocked_on": None,
+        "updated_at": now,
+    }
+
+    output_path = harness_dir / "state.json"
+    with open(output_path, "w", encoding="utf-8") as f:
+        json.dump(state, f, indent=2, ensure_ascii=False)
+        f.write("\n")
+
+    print(f"✅ Created {output_path}")
+
+
+def create_subagent_dirs(harness_dir: Path) -> None:
+    """Create directories used for subagent coordination."""
+    for dirname in ("handoffs", "prompts"):
+        output_path = harness_dir / dirname
+        output_path.mkdir(parents=True, exist_ok=True)
+        keep_path = output_path / ".gitkeep"
+        keep_path.write_text("", encoding="utf-8")
+        print(f"✅ Created {output_path}")
 
 
 def create_init_script(harness_dir: Path) -> None:
@@ -163,8 +242,10 @@ fi
 echo "✅ Development environment ready!"
 echo ""
 echo "📋 Quick commands:"
+echo "   - Planner plan:   cat $SCRIPT_DIR/plan.md"
 echo "   - Check progress: cat $SCRIPT_DIR/progress.txt"
 echo "   - View features:  cat $SCRIPT_DIR/feature_list.json"
+echo "   - Harness state:  cat $SCRIPT_DIR/state.json"
 echo "   - Git history:    git log --oneline -10"
 """
 
@@ -214,9 +295,12 @@ def main():
     print(f"   Description: {args.description}\n")
 
     # Create harness files
+    create_plan_file(harness_dir, args.description)
     create_feature_list(project_path.name, harness_dir, args.description)
     create_progress_file(project_path.name, harness_dir, args.description)
     create_init_script(harness_dir)
+    create_state_file(project_path.name, args.feature_name, harness_dir)
+    create_subagent_dirs(harness_dir)
 
     print(f"\n✅ Harness initialization complete!")
     print(f"\nNext steps:")
